@@ -40,7 +40,8 @@ def objective(params, X, y, X_early_stop, y_early_stop, scorer, n_folds = 10):
                             n_estimators = 2000,
                             n_jobs = 1,
                             early_stopping_rounds = 50,
-                            eval_metric = "logloss"
+                            eval_metric = "logloss",
+                            tree_method="gpu_hist",
                             )
 
     xgb_fit_params = {
