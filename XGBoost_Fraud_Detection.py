@@ -42,7 +42,7 @@ def objective(params, X, y, X_early_stop, y_early_stop, scorer, n_folds = 10):
                             early_stopping_rounds = 50,
                             eval_metric = "logloss",
                             tree_method = "hist",
-                            device = "cuda"
+                           # device = "cuda"
                             )
 
     xgb_fit_params = {
@@ -153,3 +153,5 @@ if __name__ == "__main__":
     print('\tTest set performance:')
     print('\tRecall    = %2.3f' % test_recall)
     print('\tPrecision = %2.3f' % test_precision)
+
+    xgboost_clf.save_model("fraud_detection_xgboost.model")
