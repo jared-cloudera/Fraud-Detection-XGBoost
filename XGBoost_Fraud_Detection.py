@@ -42,7 +42,6 @@ def objective(params, X, y, X_early_stop, y_early_stop, scorer, n_folds = 10):
                             early_stopping_rounds = 50,
                             eval_metric = "logloss",
                             tree_method = "hist",
-                           # device = "cuda"
                             )
 
     xgb_fit_params = {
@@ -74,10 +73,10 @@ def tune_xgb(param_space, X_train, y_train, X_early_stop, y_early_stop, n_iter):
     # returns the values of parameters from the best trial
     return trials.best_trial['result']['params']
 
-def optimal_threshold(estimator, X, y, n_folds = 10, min_prec = 0.05, fit_params = None):
+def optimal_threshold(estimator, X, y, n_folds = 10, min_prec = MIN_PRECISION, fit_params = None):
     
     cv_pred_prob = cross_val_predict(estimator, X, y, method='predict_proba',
-                                     cv = n_folds, fit_params=fit_params, n_jobs=-1)[:,1]
+                                     cv = n_folds, params=fit_params, n_jobs=-1)[:,1]
 
     # Once again, the PR curve is discreet and may not contain the exact precision level
     # we are looking for. So, we need to find the closest existing precision
@@ -93,6 +92,8 @@ def thresholded_predict(X, estimator, threshold):
 if __name__ == "__main__":    
     # Loading the data
     data = pd.read_csv('creditcard.csv')
+    #data = data.sample(5000)
+
     X = data.drop('Class', axis = 1)
     y = data['Class']
     
@@ -124,7 +125,15 @@ if __name__ == "__main__":
     
     print('\tThe best hyper-parameters found:\n')
     print(*['\t\t%s = %s' % (k, str(round(v, 4))) for k, v in best_params.items()], sep='\n')
-
+    # The best hyper-parameters found:
+    #
+    # colsample_bytree = 0.7638
+    # learning_rate = 0.0518
+    # max_depth = 8
+    # min_child_weight = 3
+    # reg_alpha = 0.2349
+    # reg_lambda = 0.995
+    # subsample = 0.7053
     # # # # # # # # #
     # Step 2: Empirical thresholding: finding optimal classification threshold
     # # # # # # # # #
