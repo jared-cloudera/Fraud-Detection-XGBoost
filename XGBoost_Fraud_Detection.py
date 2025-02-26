@@ -22,7 +22,11 @@ def conditional_recall_score(y_true, pred_proba, min_prec = MIN_PRECISION):
     # Then return the highest recall acheiveable at that precision level
     # Taking max() helps in case PR curve is locally flat
     # with multiple recall values for the same precision
-    pr, rc,_ = precision_recall_curve(y_true, pred_proba[:,1])
+    try:
+        pr, rc,_ = precision_recall_curve(y_true, pred_proba)
+    except Exception as e:
+        print(e)
+
     return np.max(rc[pr >= min_prec])
 
 def objective(params, X, y, X_early_stop, y_early_stop, scorer, n_folds = 10):
@@ -31,24 +35,28 @@ def objective(params, X, y, X_early_stop, y_early_stop, scorer, n_folds = 10):
     neg_count = len(y_train) - pos_count
     imbalance_ratio = neg_count / pos_count
     
-    xgb_clf = XGBClassifier(**params, scale_pos_weight=imbalance_ratio,
-                            n_estimators = 2000, n_jobs = 1)
+    xgb_clf = XGBClassifier(**params,
+                            scale_pos_weight=imbalance_ratio,
+                            n_estimators = 2000,
+                            n_jobs = 1,
+                            early_stopping_rounds = 50,
+                            eval_metric = "logloss"
+                            )
 
-    xgb_fit_params = {'early_stopping_rounds': 50,
-                      'eval_metric': ['logloss'],
+    xgb_fit_params = {
                       'eval_set': [(X_early_stop, y_early_stop)],
                       'verbose': False
                       }
     
     cv_score = np.mean(cross_val_score(xgb_clf, X_train, y_train, cv = n_folds,
-                               fit_params = xgb_fit_params, n_jobs = -1,
+                               params = xgb_fit_params, n_jobs = -1,
                                scoring = scorer))
     
     # hypoeropt minimizes the loss, hence the minus sign behind cv_score
     return {'loss': -cv_score, 'status': hyperopt.STATUS_OK, 'params': params}
 
 def tune_xgb(param_space, X_train, y_train, X_early_stop, y_early_stop, n_iter):    
-    scorer = make_scorer(conditional_recall_score, needs_proba=True)
+    scorer = make_scorer(conditional_recall_score, response_method=["predict_proba"])
 
     # hyperopt.fmin will only pass the parameter values to objective. So we need to
     # create a partial function to bind the rest of the arguments we want to pass to objective
