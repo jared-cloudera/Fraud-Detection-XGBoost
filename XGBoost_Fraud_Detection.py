@@ -41,7 +41,8 @@ def objective(params, X, y, X_early_stop, y_early_stop, scorer, n_folds = 10):
                             n_jobs = 1,
                             early_stopping_rounds = 50,
                             eval_metric = "logloss",
-                            tree_method="gpu_hist",
+                            tree_method = "hist",
+                            device = "cuda"
                             )
 
     xgb_fit_params = {
